@@ -6,25 +6,41 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-@RestController // 데이터 받아서 보여줌(JSON)"
-@RequestMapping("/api/stocks") //  "localhost:8080/api/stocks"가 기본
+@RestController
+@RequestMapping("/api/stocks")
 @RequiredArgsConstructor
 public class StockController {
 
     private final StockService stockService;
 
-    // 1. 모든 종목 보이기.
-    // 주소: GET http://localhost:8080/api/stocks
+    // 1. 종목 카드 저장 (POST)
+    @PostMapping
+    public String saveStock(@RequestBody Stock stock) {
+        stockService.saveStock(stock);
+        return "✅ 종목 카드 생성 완료!";
+    }
+
+    // 2. 전체 카드 목록 조회 (GET)
     @GetMapping
     public List<Stock> getAllStocks() {
         return stockService.getAllStocks();
     }
 
-    // 2. 검색해줘!
-    // 주소: GET http://localhost:8080/api/stocks/search?keyword=엔비디아
-    @GetMapping("/search")
-    public List<Stock> searchStocks(@RequestParam String keyword) {
-        return stockService.searchStocks(keyword);
+    // 3. 종목 삭제 (DELETE)
+    @DeleteMapping("/{id}")
+    public String deleteStock(@PathVariable Long id) {
+        stockService.deleteStock(id);
+        return "🗑️ 삭제 완료!";
+    }
+
+    // ⭐ 4. 태그 이름 변경 API
+    @PutMapping("/tags")
+    public String updateTag(@RequestBody Map<String, String> payload) {
+        String oldName = payload.get("oldName");
+        String newName = payload.get("newName");
+        stockService.renameTag(oldName, newName);
+        return "ok";
     }
 }

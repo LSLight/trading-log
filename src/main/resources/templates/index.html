@@ -2,235 +2,333 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>주식 사팔사팔 OS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Strategy</title>
   <style>
-    /* 기본 스타일 */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 80px; }
+    :root { --bg: #FFF; --gray: #787774; --border: #E9E9E7; --dom-bg: #F7F6F3; --ovs-bg: #F2F8F2; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #37352F; margin: 0; padding: 20px; }
 
-    /* 탭 네비게이션 (상단 고정) */
-    .tab-nav { display: flex; background: white; padding: 15px; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 10; }
-    .tab-btn { flex: 1; text-align: center; padding: 10px; font-weight: bold; color: #888; cursor: pointer; border-radius: 10px; transition: 0.2s; }
-    .tab-btn.active { background: #e8f5e9; color: #2e7d32; }
+    /* 탭 및 레이아웃 (기존 동일) */
+    .mobile-tabs { display: none; justify-content: center; margin-bottom: 20px; gap: 20px; }
+    .tab-btn { border: none; background: none; font-size: 1rem; color: var(--gray); font-weight: 500; cursor: pointer; }
+    .tab-btn.active { color: #37352F; font-weight: 700; border-bottom: 2px solid #37352F; }
+    .main-container { display: flex; justify-content: center; align-items: flex-start; gap: 30px; max-width: 700px; margin: 0 auto; }
+    .column { flex: 1; max-width: 500px; padding: 16px; border-radius: 8px; }
+    .col-dom { background: var(--dom-bg); } .col-ovs { background: var(--ovs-bg); }
+    .header { display: flex; align-items: center; margin-bottom: 15px; font-weight: 600; font-size: 0.95rem; }
+    .badge { padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; }
+    .badge-dom { background: #E3E2E0; color: #37352F; } .badge-ovs { background: #DBEDDB; color: #1C3829; }
 
-    /* 탭 내용 영역 */
-    .tab-content { display: none; margin-top: 20px; }
-    .tab-content.active { display: block; }
+    @media (max-width: 768px) {
+      .mobile-tabs { display: flex; } .main-container { flex-direction: column; width: 100%; gap: 0; }
+      .column { display: none; width: 100%; max-width: none; padding: 0; background: transparent; } .column.show { display: block; }
+    }
 
-    /* [전략 탭] 카드 스타일 */
-    .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .stock-info { display: flex; align-items: center; gap: 10px; }
-    .logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; }
-    .stock-name { font-weight: bold; font-size: 1.1rem; }
-    .strategy-box { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 5px; }
-    .label { font-weight: 800; font-size: 0.8rem; margin-right: 5px; }
-    .label.buy { color: #e74c3c; }
-    .label.sell { color: #2980b9; }
+    /* 카드 스타일 */
+    .card { background: white; border-radius: 6px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); cursor: pointer; border: 1px solid rgba(0,0,0,0.02); }
+    /*.card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }*/
+    .card-top { display: flex; justify-content: space-between; margin-bottom: 15px; }
+    .stock-name { font-weight: 700; } .stock-code { font-size: 0.8rem; color: var(--gray); margin-left: 5px; }
 
-    /* [전략 탭] 마지막 '추가하기' 카드 */
-    .add-card { border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; height: 100px; cursor: pointer; color: #888; font-weight: bold; }
-    .add-card:active { background: #eee; }
+    /* ⭐ 전략 리스트 스타일 (점 찍기) */
+    .strategy-list { margin: 5px 0; padding-left: 0; list-style: none; }
+    .strategy-item { font-size: 0.85rem; color: #555; margin-bottom: 3px; display: flex; align-items: flex-start; }
+    .bullet { margin-right: 6px; font-weight: bold; }
+    .bullet-buy { color: #2EAADC; } .bullet-sell { color: #E03E3E; }
+    .empty-msg { font-size: 0.8rem; color: #CCC; font-style: italic; }
 
-    /* [일지 탭] 스타일 */
-    .log-summary { display: flex; justify-content: space-between; background: #f1f3f5; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
-    .log-val { font-weight: bold; font-size: 1.1rem; }
-    .log-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 10px; }
-    .log-table th { text-align: left; color: #888; border-bottom: 1px solid #ddd; padding: 5px; }
-    .log-table td { padding: 8px 5px; border-bottom: 1px solid #eee; }
-    .type-buy { color: #e74c3c; font-weight: bold; }
-    .type-sell { color: #2980b9; font-weight: bold; }
-    .add-log-btn { width: 100%; padding: 10px; background: #333; color: white; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; }
+    /* 태그 */
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .tag { font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; color: #444; }
+    /* 태그 색상들 */
+    .tag-gray { background: #E3E2E0; } .tag-yellow { background: #FDECC8; } .tag-green { background: #DBEDDB; }
+    .tag-blue { background: #D3E5EF; } .tag-red { background: #FFE2DD; } .tag-purple { background: #E8DEEE; } .tag-orange { background: #FADEC9; }
 
-    /* 팝업(모달) 스타일 */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
-    .modal-overlay.open { display: flex; }
-    .modal-box { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .add-btn { padding: 12px; color: var(--gray); cursor: pointer; border-radius: 6px; margin-top: 5px;margin-bottom: 5px; display: flex; align-items: center; }
+    .add-btn:hover { background: rgba(0,0,0,0.05); color: #333; }
 
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
-    .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-    .btn-save { width: 100%; padding: 15px; background: #2ecc71; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; }
-    .btn-close { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+    /* 모달 */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; }
+    .modal-box { background: white; width: 95%; max-width: 500px; padding: 25px; border-radius: 12px; max-height: 90vh; overflow-y: auto; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; font-family: inherit; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+
+    .color-picker { display: flex; gap: 8px; margin-bottom: 10px; }
+    .color-opt { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+    .color-opt.selected { border-color: #333; transform: scale(1.1); }
+
+    .rec-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+    .rec-tag-btn { border: none; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; color: #333; position: relative; }
+    .rec-tag-btn:hover .edit-hint { display: block; }
+    .edit-hint { display: none; position: absolute; top: -20px; left: 0; background: #333; color: white; font-size: 10px; padding: 2px 4px; border-radius: 3px; white-space: nowrap;}
+
+    .btn-submit { background: #333; color: white; width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-edit { flex: 1; background: #333; color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-delete { width: 80px; background: white; color: #E03E3E; border: 1px solid #E03E3E; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
-<div class="tab-nav">
-  <div class="tab-btn active" onclick="switchTab('strategy')">📋 전략</div>
-  <div class="tab-btn" onclick="switchTab('journal')">💰 일지</div>
+<div class="mobile-tabs">
+  <button class="tab-btn active" onclick="switchTab('ALL', this)">전체</button>
+  <button class="tab-btn" onclick="switchTab('DOM', this)">🇰🇷 국장</button>
+  <button class="tab-btn" onclick="switchTab('OVS', this)">🇺🇸 미장</button>
 </div>
 
-<div class="container">
+<div class="main-container">
+  <div id="col-dom" class="column col-dom show">
+    <div class="header">
+      <div class="badge badge-dom">국장 전략 <span style="margin-left:5px; opacity:0.6" th:text="${#lists.size(stocks.?[marketType.name() == 'DOMESTIC'])}"></span></div>
+    </div>
+    <div class="card" th:each="stock : ${stocks}" th:if="${stock.marketType.name() == 'DOMESTIC'}" th:onclick="openDetailModal([[${stock}]])">
+      <div class="card-top"><div><span class="stock-name" th:text="${stock.stockName}"></span><span class="stock-code" th:text="${stock.code}"></span></div></div>
 
-  <div id="strategy-tab" class="tab-content active">
+      <ul class="strategy-list">
+        <li class="strategy-item" th:each="str, stat : ${stock.buyStrategies}" th:if="${stat.index < 2}">
+          <span class="bullet bullet-buy">•</span> <span th:text="${str}"></span>
+        </li>
+        <li class="strategy-item" th:each="str, stat : ${stock.sellStrategies}" th:if="${stat.index < 2}">
+          <span class="bullet bullet-sell">•</span> <span th:text="${str}"></span>
+        </li>
+      </ul>
 
-    <div class="card" th:each="stock : ${stocks}">
-      <div class="card-header">
-        <div class="stock-info">
-          <img th:src="${stock.logoUrl}" class="logo" onerror="this.src='https://via.placeholder.com/40'">
-          <div>
-            <div class="stock-name" th:text="${stock.stockName}">테슬라</div>
-            <div style="font-size:0.8rem; color:#888;" th:text="${stock.code}">TSLA</div>
-          </div>
-        </div>
-      </div>
-      <div class="strategy-box">
-        <div th:if="${stock.buyStrategy != null}"><span class="label buy">BUY</span> <span th:text="${stock.buyStrategy}"></span></div>
-        <div th:if="${stock.sellStrategy != null}"><span class="label sell">SELL</span> <span th:text="${stock.sellStrategy}"></span></div>
-      </div>
-      <div style="margin-top:10px;">
-        <span style="background:#e8f5e9; color:#2e7d32; padding:3px 6px; border-radius:4px; font-size:0.75rem;" th:text="${stock.strategyTags}">#태그</span>
+      <div class="tags">
+                <span th:each="t : ${stock.tags}" th:with="p=${#strings.arraySplit(t, '|')}"
+                      class="tag" th:classappend="'tag-'+${p.length>1?p[1]:'gray'}" th:text="${p[0]}"></span>
       </div>
     </div>
-
-    <div class="card add-card" onclick="openStrategyModal()">
-      + 새 종목 전략 추가하기
-    </div>
+    <div class="add-btn" onclick="openCreateModal('DOMESTIC')"><span>+ 새로 만들기</span></div>
   </div>
 
-
-  <div id="journal-tab" class="tab-content">
-
-    <div class="card" th:each="stock : ${stocks}">
-      <div class="card-header">
-        <div class="stock-info">
-          <img th:src="${stock.logoUrl}" class="logo">
-          <div class="stock-name" th:text="${stock.stockName}"></div>
-        </div>
-      </div>
-
-      <div class="log-summary">
-        <div>
-          <div style="font-size:0.8rem; color:#888;">보유량</div>
-          <div class="log-val"><span th:text="${#numbers.formatDecimal(stock.totalQuantity, 1, 2)}">0</span>주</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:0.8rem; color:#888;">평단가</div>
-          <div class="log-val">$<span th:text="${#numbers.formatDecimal(stock.avgPrice, 1, 2)}">0.00</span></div>
-        </div>
-      </div>
-
-      <table class="log-table" th:if="${not #lists.isEmpty(stock.tradeLogs)}">
-        <thead>
-        <tr>
-          <th>날짜</th>
-          <th>구분</th>
-          <th>가격</th>
-          <th>수량</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="log : ${stock.tradeLogs}">
-          <td th:text="${log.date}">01/20</td>
-          <td th:text="${log.type}" th:class="${log.type == 'BUY' || log.type == '매수'} ? 'type-buy' : 'type-sell'">매수</td>
-          <td th:text="${'$' + log.price}">$420</td>
-          <td th:text="${log.quantity}">1</td>
-        </tr>
-        </tbody>
-      </table>
-      <div th:if="${#lists.isEmpty(stock.tradeLogs)}" style="text-align:center; color:#ccc; font-size:0.8rem; padding:10px;">기록이 없습니다.</div>
-
-      <button class="add-log-btn" th:onclick="openLogModal([[${stock.stockName}]])">+ 기록 추가</button>
+  <div id="col-ovs" class="column col-ovs show">
+    <div class="header">
+      <div class="badge badge-ovs">미장 전략 <span style="margin-left:5px; opacity:0.6" th:text="${#lists.size(stocks.?[marketType.name() == 'OVERSEAS'])}"></span></div>
     </div>
-  </div>
+    <div class="card" th:each="stock : ${stocks}" th:if="${stock.marketType.name() == 'OVERSEAS'}" th:onclick="openDetailModal([[${stock}]])">
+      <div class="card-top"><div><span class="stock-name" th:text="${stock.stockName}"></span><span class="stock-code" th:text="${stock.code}"></span></div></div>
 
-</div> <div id="modal-strategy" class="modal-overlay">
-  <div class="modal-box" style="position:relative;">
-    <button class="btn-close" onclick="closeModal('modal-strategy')">&times;</button>
-    <h3 style="margin-top:0;">새 전략 만들기</h3>
-    <form action="#" method="post" onsubmit="alert('아직 컨트롤러 안만들어서 저장은 안돼요!'); return false;">
-      <div class="form-group">
-        <label>종목명</label>
-        <input type="text" class="form-input" placeholder="예: 애플">
+      <ul class="strategy-list">
+        <li class="strategy-item" th:each="str, stat : ${stock.buyStrategies}" th:if="${stat.index < 2}">
+          <span class="bullet bullet-buy">•</span> <span th:text="${str}"></span>
+        </li>
+        <li class="strategy-item" th:each="str, stat : ${stock.sellStrategies}" th:if="${stat.index < 2}">
+          <span class="bullet bullet-sell">•</span> <span th:text="${str}"></span>
+        </li>
+      </ul>
+
+      <div class="tags">
+                <span th:each="t : ${stock.tags}" th:with="p=${#strings.arraySplit(t, '|')}"
+                      class="tag" th:classappend="'tag-'+${p.length>1?p[1]:'gray'}" th:text="${p[0]}"></span>
       </div>
-      <div class="form-group">
-        <label>매수 전략</label>
-        <textarea class="form-input" rows="3" placeholder="예: 120일선 터치 시 진입"></textarea>
-      </div>
-      <div class="form-group">
-        <label>매도 전략</label>
-        <textarea class="form-input" rows="3" placeholder="예: 수익 10% 달성 시 절반 매도"></textarea>
-      </div>
-      <button type="submit" class="btn-save">등록하기</button>
-    </form>
+    </div>
+    <div class="add-btn" onclick="openCreateModal('OVERSEAS')"><span>+ 새로 만들기</span></div>
   </div>
 </div>
 
+<div id="createModal" class="modal-overlay" onclick="closeModal(event, 'createModal')">
+  <div class="modal-box">
+    <h3 id="modalTitle" style="margin-top:0;">전략 수정</h3>
+    <input type="hidden" id="inputId">
+    <select id="inputMarket" class="form-select">
+      <option value="DOMESTIC">🇰🇷 국장</option><option value="OVERSEAS">🇺🇸 미장</option>
+    </select>
+    <input type="text" id="inputName" class="form-input" placeholder="종목명">
+    <input type="text" id="inputCode" class="form-input" placeholder="티커 (CODE)">
 
-<div id="modal-log" class="modal-overlay">
-  <div class="modal-box" style="position:relative;">
-    <button class="btn-close" onclick="closeModal('modal-log')">&times;</button>
-    <h3 style="margin-top:0;">매매 기록하기</h3>
-    <form action="/log/new" method="post">
-      <div class="form-group">
-        <label>종목</label>
-        <input type="text" id="log-stock-name" name="stockName" class="form-input" readonly style="background:#eee;">
-      </div>
-      <div class="form-group">
-        <label>날짜</label>
-        <input type="date" id="log-date" class="form-input"> </div>
-      <div class="form-group" style="display:flex; gap:10px;">
-        <div style="flex:1;">
-          <label>구분</label>
-          <select name="type" class="form-input">
-            <option value="BUY">매수</option>
-            <option value="SELL">매도</option>
-          </select>
-        </div>
-        <div style="flex:1;">
-          <label>수량</label>
-          <input type="number" name="quantity" step="0.0001" class="form-input" placeholder="10">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>체결 가격 ($)</label>
-        <input type="number" name="price" step="0.01" class="form-input" placeholder="150.5">
-      </div>
-      <input type="hidden" name="memo" value="팝업입력">
+    <label style="color:#2EAADC; font-size:0.9rem; font-weight:bold;">🚀 매수 전략 (줄바꿈으로 구분)</label>
+    <textarea id="inputBuy" class="form-textarea" placeholder="• 20일선 터치 시&#13;&#10;• RSI 30 이하"></textarea>
 
-      <button type="submit" class="btn-save">기록 저장</button>
-    </form>
+    <label style="color:#E03E3E; font-size:0.9rem; font-weight:bold;">💰 매도 전략 (줄바꿈으로 구분)</label>
+    <textarea id="inputSell" class="form-textarea" placeholder="• 5% 수익 시 절반 익절&#13;&#10;• 전고점 도달"></textarea>
+
+    <label style="font-size:0.9rem; font-weight:bold;">태그</label>
+    <div style="display:flex; gap:5px; margin-bottom:5px;">
+      <input type="text" id="inputTagText" class="form-input" placeholder="태그 이름" style="margin-bottom:0;">
+      <button onclick="addTagFromInput()" style="width:60px; border-radius:5px; border:1px solid #ddd;">추가</button>
+    </div>
+    <div class="color-picker">
+      <div class="color-opt selected" style="background:#E3E2E0" onclick="selColor(this, 'gray')"></div>
+      <div class="color-opt" style="background:#FDECC8" onclick="selColor(this, 'yellow')"></div>
+      <div class="color-opt" style="background:#DBEDDB" onclick="selColor(this, 'green')"></div>
+      <div class="color-opt" style="background:#D3E5EF" onclick="selColor(this, 'blue')"></div>
+      <div class="color-opt" style="background:#FFE2DD" onclick="selColor(this, 'red')"></div>
+      <div class="color-opt" style="background:#E8DEEE" onclick="selColor(this, 'purple')"></div>
+    </div>
+    <div id="curTags" style="display:flex; gap:5px; flex-wrap:wrap; min-height:30px; margin-bottom:10px;"></div>
+
+    <div style="font-size:0.8rem; color:#888; border-top:1px solid #eee; padding-top:10px;">
+      기존 태그 (더블클릭하여 수정)
+    </div>
+    <div class="rec-tags">
+      <button th:each="fullTag : ${allTags}" th:with="parts=${#strings.arraySplit(fullTag, '|')}"
+              class="rec-tag-btn" th:style="'background:var(--tag-'+${parts[1]}+')'"
+              th:onclick="addRecTag([[${parts[0]}]], [[${parts[1]}]])"
+              th:ondblclick="editTagName([[${parts[0]}]])"> <span th:text="${parts[0]}"></span>
+        <span class="edit-hint">수정</span>
+      </button>
+    </div>
+
+    <button class="btn-submit" onclick="saveStock()">저장하기</button>
   </div>
 </div>
 
+<div id="detailModal" class="modal-overlay" onclick="closeModal(event, 'detailModal')">
+  <div class="modal-box">
+    <h2 id="detName" style="margin:0;"></h2>
+    <div id="detTags" style="display:flex; gap:5px; margin:10px 0;"></div>
+
+    <h4 style="color:#2EAADC; margin-bottom:5px;">🚀 매수 전략</h4>
+    <ul id="detBuy" class="strategy-list"></ul>
+
+    <h4 style="color:#E03E3E; margin-bottom:5px; margin-top:20px;">💰 매도 전략</h4>
+    <ul id="detSell" class="strategy-list"></ul>
+
+    <div class="modal-actions">
+      <button class="btn-delete" onclick="deleteStock()">삭제</button>
+      <button class="btn-edit" onclick="editStock()">수정</button>
+    </div>
+  </div>
+</div>
 
 <script>
-  // 1. 탭 전환 기능
-  function switchTab(tabName) {
-    // 모든 탭 내용 숨김
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  let curTags = [], selCol = 'gray', curStock = null;
 
-    // 선택한 탭 보이기
-    if(tabName === 'strategy') {
-      document.getElementById('strategy-tab').classList.add('active');
-      document.querySelectorAll('.tab-btn')[0].classList.add('active');
-    } else {
-      document.getElementById('journal-tab').classList.add('active');
-      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  function switchTab(type, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    const dom = document.getElementById('col-dom'), ovs = document.getElementById('col-ovs');
+    if(type==='ALL'){ dom.classList.add('show'); ovs.classList.add('show'); }
+    else if(type==='DOM'){ dom.classList.add('show'); ovs.classList.remove('show'); }
+    else { dom.classList.remove('show'); ovs.classList.add('show'); }
+  }
+
+  function openCreateModal(type) {
+    document.getElementById('createModal').style.display = 'flex';
+    document.getElementById('modalTitle').innerText = "전략추가";
+    document.getElementById('inputId').value = '';
+    document.getElementById('inputMarket').value = type;
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputCode').value = '';
+    document.getElementById('inputBuy').value = ''; // 텍스트area 초기화
+    document.getElementById('inputSell').value = '';
+    curTags = []; renderTags();
+  }
+
+  function openDetailModal(stock) {
+    curStock = stock;
+    document.getElementById('detailModal').style.display = 'flex';
+    document.getElementById('detName').innerText = stock.stockName;
+
+    // 리스트 그리기 (매수)
+    const buyUl = document.getElementById('detBuy'); buyUl.innerHTML = '';
+    if(stock.buyStrategies.length === 0) buyUl.innerHTML = '<li class="empty-msg">전략 없음</li>';
+    stock.buyStrategies.forEach(s => buyUl.innerHTML += `<li class="strategy-item"><span class="bullet bullet-buy">•</span> ${s}</li>`);
+
+    // 리스트 그리기 (매도)
+    const sellUl = document.getElementById('detSell'); sellUl.innerHTML = '';
+    if(stock.sellStrategies.length === 0) sellUl.innerHTML = '<li class="empty-msg">전략 없음</li>';
+    stock.sellStrategies.forEach(s => sellUl.innerHTML += `<li class="strategy-item"><span class="bullet bullet-sell">•</span> ${s}</li>`);
+
+    // 태그
+    const tagBox = document.getElementById('detTags'); tagBox.innerHTML = '';
+    stock.tags.forEach(t => {
+      let p = t.split('|');
+      tagBox.innerHTML += `<span class="tag tag-${p[1]||'gray'}">${p[0]}</span>`;
+    });
+  }
+
+  function editStock() {
+    if(!curStock) return;
+    document.getElementById('detailModal').style.display = 'none';
+    document.getElementById('createModal').style.display = 'flex';
+    document.getElementById('modalTitle').innerText = "수정하기";
+
+    document.getElementById('inputId').value = curStock.id;
+    document.getElementById('inputMarket').value = curStock.marketType;
+    document.getElementById('inputName').value = curStock.stockName;
+    document.getElementById('inputCode').value = curStock.code;
+
+    // ⭐ 리스트 -> 줄바꿈 문자열로 변환해서 텍스트창에 넣기
+    document.getElementById('inputBuy').value = curStock.buyStrategies.join('\n');
+    document.getElementById('inputSell').value = curStock.sellStrategies.join('\n');
+
+    curTags = [...curStock.tags]; renderTags();
+  }
+
+  function saveStock() {
+    const id = document.getElementById('inputId').value;
+    const buyText = document.getElementById('inputBuy').value;
+    const sellText = document.getElementById('inputSell').value;
+
+    // ⭐ 줄바꿈(\n) 기준으로 쪼개서 리스트로 만듦 (빈 줄은 제거)
+    const buyList = buyText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
+    const sellList = sellText.split('\n').map(s=>s.trim()).filter(s=>s!=='');
+
+    const data = {
+      id: id ? parseInt(id) : null,
+      stockName: document.getElementById('inputName').value,
+      code: document.getElementById('inputCode').value,
+      marketType: document.getElementById('inputMarket').value,
+      buyStrategies: buyList,  // 리스트 전송
+      sellStrategies: sellList, // 리스트 전송
+      tags: curTags
+    };
+    fetch('/api/stocks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
+            .then(r=>{ if(r.ok) location.reload(); else alert('실패'); });
+  }
+
+  function deleteStock() {
+    if(!curStock || !confirm('삭제하시겠습니까?')) return;
+    fetch('/api/stocks/'+curStock.id, { method:'DELETE' }).then(r=> location.reload());
+  }
+
+  // 태그 관련
+  function selColor(el, c) {
+    document.querySelectorAll('.color-opt').forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected'); selCol = c;
+  }
+  function addTagFromInput() {
+    let val = document.getElementById('inputTagText').value.trim();
+    if(val) {
+      let full = val + '|' + selCol;
+      if(!curTags.includes(full)) curTags.push(full);
+      renderTags();
+      document.getElementById('inputTagText').value = '';
+    }
+  }
+  function addRecTag(name, color) {
+    let full = name + '|' + color;
+    if(!curTags.includes(full)) curTags.push(full);
+    renderTags();
+  }
+  function renderTags() {
+    const box = document.getElementById('curTags'); box.innerHTML = '';
+    curTags.forEach((t, i) => {
+      let p = t.split('|');
+      let s = document.createElement('span');
+      s.className = `tag tag-${p[1]||'gray'}`; s.innerText = p[0] + ' ✕'; s.style.cursor='pointer';
+      s.onclick = ()=> { curTags.splice(i,1); renderTags(); };
+      box.appendChild(s);
+    });
+  }
+
+  // ⭐ 태그 이름 수정 기능
+  function editTagName(oldName) {
+    const newName = prompt(`'${oldName}' 태그 이름을 무엇으로 바꿀까요?`);
+    if (newName && newName.trim() !== "" && newName !== oldName) {
+      fetch('/api/stocks/tags', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName: oldName, newName: newName.trim() })
+      }).then(r => {
+        if(r.ok) { alert('변경 완료!'); location.reload(); }
+        else alert('변경 실패');
+      });
     }
   }
 
-  // 2. 모달(팝업) 열기/닫기
-  function openStrategyModal() {
-    document.getElementById('modal-strategy').classList.add('open');
-  }
-
-  function openLogModal(stockName) {
-    // 눌러진 종목 이름을 팝업창에 자동으로 박아넣기
-    document.getElementById('log-stock-name').value = stockName;
-
-    // 날짜는 오늘로 기본 세팅
-    document.getElementById('log-date').valueAsDate = new Date();
-    document.getElementById('modal-log').classList.add('open');
-  }
-
-  function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('open');
-  }
+  function closeModal(e, id) { if(e.target === document.getElementById(id)) document.getElementById(id).style.display='none'; }
 </script>
-
 </body>
 </html>

@@ -1,49 +1,57 @@
 package com.logtrading.trading.controller;
 
-import com.logtrading.trading.domain.TradeLog;
+import com.logtrading.trading.domain.Stock;
 import com.logtrading.trading.service.StockService;
-import com.logtrading.trading.service.TradeLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@Controller // HTML
+@Controller
 @RequiredArgsConstructor
 public class WebController {
 
     private final StockService stockService;
-    private final TradeLogService tradeLogService;
 
-    // 메인 화면 (대시보드)
     @GetMapping("/")
-    public String index(Model model) {
-        model.addAttribute("stocks", stockService.getAllStockDtos());
+    public String main(Model model) {
+        // 1. 모든 종목 가져와 전달하기
+        List<Stock> stocks = stockService.getAllStocks();
+        model.addAttribute("stocks", stocks);
+
+        // 2. 태그 중복 제거
+        // Map을 써서 "태그이름"이 같으면 덮어쓰기 해버림
+        Map<String, String> uniqueTagsMap = new HashMap<>();
+
+        for (Stock stock : stocks) {
+            for (String rawTag : stock.getTags()) {
+                String tagName;
+                String fullTag;
+
+                if (rawTag.contains("|")) {
+                    // "장투|red" 인 경우
+                    String[] parts = rawTag.split("\\|");
+                    tagName = parts[0];
+                    fullTag = rawTag;
+                } else {
+                    // "장투" (옛날 데이터) 인 경우 -> 회색으로 강제 변환
+                    tagName = rawTag;
+                    fullTag = rawTag + "|gray";
+                }
+
+                // 맵에 넣기 (이미 있는 이름이면 덮어씀 -> 즉, 중복 제거됨)
+                // 만약 색깔 있는 버전이 나중에 들어오면 색깔 있는 걸로 업데이트 됨
+                uniqueTagsMap.put(tagName, fullTag);
+            }
+        }
+
+        // 맵의 값들(Valus)만 뽑아서 리스트로 보냄
+        model.addAttribute("allTags", uniqueTagsMap.values());
+
         return "index";
-    }
-
-    //저장하기
-    @PostMapping("/log/new")
-    public String saveLog(@RequestParam String stockName,
-                          @RequestParam String type,
-                          @RequestParam Double price,
-                          @RequestParam Double quantity,
-                          @RequestParam String memo) {
-
-        TradeLog newLog = new TradeLog();
-        newLog.setDate(LocalDate.now());
-        newLog.setStockName(stockName);
-        newLog.setType(type);
-        newLog.setPrice(price);
-        newLog.setQuantity(quantity);
-        newLog.setMemo(memo);
-
-        tradeLogService.saveLog(newLog);
-
-        return "redirect:/"; // 저장 끝나면 메인화면 새로고침
     }
 }
