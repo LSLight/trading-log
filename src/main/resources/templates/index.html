@@ -7,8 +7,8 @@
   <style>
     :root {
       --bg-color: #FFFFFF; --text-color: #37352F; --gray-text: #9B9A97;
-      --dom-col-bg: #F7F6F3; --ovs-col-bg: #F0FDF4;
-      --badge-gray-bg: #E3E2E0; --badge-green-bg: #DBEDDB;
+      --dom-col-bg: #F7F6F3; --ovs-col-bg: #F0FDF4; --cal-col-bg: #FDF5F2;
+      --badge-gray-bg: #E3E2E0; --badge-green-bg: #DBEDDB; --badge-orange-bg: #FADEC9;
       --tag-gray: #E3E2E0; --tag-brown: #EEE0DA; --tag-orange: #FADEC9;
       --tag-yellow: #FDECC8; --tag-green: #DBEDDB; --tag-blue: #D3E5EF;
       --tag-purple: #E8DEEE; --tag-pink: #F5E0E9; --tag-red: #FFE2DD;
@@ -17,37 +17,57 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-color); color: var(--text-color);
-      margin: 0; padding: 20px; overflow-y: scroll; overflow-x: hidden;
+      margin: 0; padding: 0; /* ⭐ 전체 여백 제거 (헤더 때문) */
+      overflow-y: scroll; overflow-x: hidden;
     }
 
-    /* 📱 모바일 탭 */
-    .mobile-tabs { display: none; margin-bottom: 15px; gap: 10px; border-bottom: 1px solid #E9E9E7; padding-bottom: 10px; }
+    /* ⭐ [신규] 대왕 페이지 제목 (Notion Style) */
+    .main-page-header {
+      max-width: 100%;
+      padding: 40px 40px 20px 40px; /* 위쪽 여백 넉넉하게 */
+      margin-bottom: 10px;
+    }
+    .page-icon { font-size: 4rem; margin-bottom: 10px; cursor: pointer; }
+    .page-title {
+      font-size: 2.5rem; font-weight: 700; color: #37352F;
+      border: none; outline: none; width: 100%; background: transparent;
+      line-height: 1.2;
+    }
+    .page-title:empty:before { content: '제목 없음'; color: #CCC; } /* 비어있을 때 */
+    .page-title:hover { opacity: 0.8; }
+
+    /* 모바일 탭 & 보드 컨테이너 (여백 조정) */
+    .mobile-tabs { display: none; margin-bottom: 15px; gap: 10px; border-bottom: 1px solid #E9E9E7; padding: 0 20px 10px 20px; }
     .tab-btn { background: none; border: none; font-size: 0.95rem; color: var(--gray-text); cursor: pointer; padding: 5px 8px; }
     .tab-btn.active { color: var(--text-color); font-weight: 600; border-bottom: 2px solid var(--text-color); }
 
-    /* 🖥️ 보드 컨테이너 */
-    .board-container { display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 20px; min-height: 80vh; }
+    .board-container {
+      display: flex; align-items: flex-start; gap: 16px;
+      overflow-x: auto; padding: 0 40px 40px 40px; /* ⭐ 좌우 여백 헤더랑 맞춤 */
+      min-height: 80vh;
+    }
+
+    /* ... 기존 스타일 유지 ... */
     .column { flex: 0 0 280px; display: flex; flex-direction: column; border-radius: 6px; padding: 12px 10px; }
     #col-dom { background-color: var(--dom-col-bg); }
     #col-ovs { background-color: var(--ovs-col-bg); }
+    #col-cal { background-color: var(--cal-col-bg); }
 
     .column-header { display: flex; align-items: center; margin-bottom: 10px; padding: 0 4px; height: 24px; }
     .header-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 500; }
     .badge-dom { background: var(--badge-gray-bg); color: #32302C; }
     .badge-ovs { background: var(--badge-green-bg); color: #1C3829; }
+    .badge-cal { background: var(--badge-orange-bg); color: #4A332A; }
     .count { margin-left: 6px; color: var(--gray-text); font-size: 0.8rem; }
+    .editable-title { cursor: text; outline: none; border-bottom: 1px dashed transparent; transition: border 0.2s; }
+    .editable-title:hover { border-bottom: 1px dashed #999; }
+    .editable-title:focus { border-bottom: 1px solid #333; }
 
-    /* 🃏 카드 */
-    .card {
-      background: white; border-radius: 4px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 12px; margin-bottom: 8px;
-      cursor: pointer; position: relative; transition: box-shadow 0.2s;
-    }
+    .card { background: white; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 12px; margin-bottom: 8px; cursor: pointer; position: relative; transition: box-shadow 0.2s; }
     .card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
     .stock-title { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; flex: 1; }
     .stock-icon { margin-right: 6px; font-size: 1rem; }
-
     .card-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
     .card:hover .card-actions { opacity: 1; }
     .action-btn { font-size: 0.8rem; padding: 2px 4px; border-radius: 3px; cursor: pointer; color: #888; background: rgba(0,0,0,0.05); border: none; }
@@ -69,74 +89,22 @@
     .btn-new-page:hover { background: rgba(0,0,0,0.05); color: var(--text-color); }
     .btn-new-page span { margin-right: 8px; font-size: 1.1rem; font-weight: 300; }
 
-    /* ⭐ 사이드 피크 */
-    .side-peek-overlay {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.3); z-index: 998;
-    }
-    .side-peek {
-      position: fixed; top: 0; right: 0; width: 70%; height: 100%;
-      background: white; box-shadow: -5px 0 30px rgba(0,0,0,0.1);
-      z-index: 999; transform: translateX(100%); transition: transform 0.3s ease-out;
-      display: flex; flex-direction: column;
-    }
-    .side-peek.open { transform: translateX(0); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 5px; }
+    .cal-header { font-size: 0.75rem; font-weight: bold; text-align: center; color: #999; margin-bottom: 5px; }
+    .cal-day { background: white; border-radius: 3px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: 1px solid transparent; }
+    .cal-day:hover { background: #F7F6F3; }
+    .cal-day.today { color: #E03E3E; font-weight: bold; }
+    .cal-day.selected { background: #FFE2DD; color: #D44C47; font-weight: bold; border-color: #D44C47; }
+    .cal-day.empty { background: transparent; cursor: default; }
+    .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; color: #37352F; }
+    .cal-btn { background: none; border: none; cursor: pointer; color: #999; padding: 0 5px;} .cal-btn:hover { color: #333; }
+    .cal-memo-area { margin-top: 15px; border-top: 1px solid #F0F0F0; padding-top: 10px; display: none; }
+    .cal-memo-date { font-size: 0.85rem; font-weight: 700; color: #E03E3E; margin-bottom: 8px; }
+    .cal-memo-input { width: 100%; min-height: 120px; border: none; outline: none; resize: none; font-family: inherit; font-size: 0.85rem; color: #37352F; background: transparent; line-height: 1.5; }
+    .cal-memo-input::placeholder { color: #CCC; }
+    .btn-save-memo { font-size: 0.75rem; padding: 4px 10px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer; float: right; margin-top: 5px; }
 
-    .peek-header { padding: 20px 30px; border-bottom: 1px solid #F0F0F0; display: flex; justify-content: space-between; align-items: center; }
-    .peek-title { font-size: 1.6rem; font-weight: 700; display: flex; align-items: center; }
-    .peek-close { border: none; background: none; font-size: 1.5rem; cursor: pointer; color: #999; }
-
-    .peek-content { padding: 0 30px 40px 30px; overflow-y: auto; flex: 1; }
-    .peek-section { margin-top: 25px; }
-    .peek-label { font-size: 0.85rem; color: #999; margin-bottom: 8px; font-weight: 600; display: flex; align-items: center;}
-
-    .peek-strategy-box { background: #FAFAFA; padding: 15px; border-radius: 6px; border: 1px solid #F0F0F0; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; }
-
-    /* 매매 일지 통계 */
-    .trade-stats { display: flex; gap: 15px; margin-bottom: 15px; background: #F7F7F5; padding: 15px; border-radius: 8px; }
-    .stat-item { flex: 1; }
-    .stat-label { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
-    .stat-value { font-size: 1.1rem; font-weight: 700; color: #333; }
-    .val-red { color: #E03E3E; } .val-blue { color: #2EAADC; }
-
-    /* ⭐ 입력 박스 디자인 (요청사항 2) */
-    .trade-input-box {
-      background: #FCFCFA; /* 아주 연한 베이지/회색 */
-      border: 1px solid #E9E9E7;
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-    }
-    .trade-input-header { font-size: 0.8rem; color: #999; margin-bottom: 10px; font-weight: 600; }
-
-    .trade-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-    .trade-input { padding: 8px; border: 1px solid #DDD; border-radius: 4px; font-family: inherit; font-size: 0.9rem; background:white; }
-    .btn-add-trade { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;}
-
-    .trade-list { list-style: none; padding: 0; margin: 0; }
-    .trade-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #EEE; font-size: 0.9rem; }
-    .trade-info { display: flex; flex-direction: column; gap: 2px; }
-    .trade-meta { font-size: 0.75rem; color: #999; display: flex; gap: 6px; align-items: center;}
-    .trade-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
-    .badge-BUY { background: #FFE2DD; color: #D44C47; }
-    .badge-SELL { background: #D3E5EF; color: #183347; }
-
-    /* ⭐ 삭제 버튼 스타일 */
-    .btn-del-record {
-      border: none; background: none; color: #CCC; cursor: pointer; font-size: 1.1rem; line-height: 1;
-      padding: 0 0 0 8px; transition: color 0.2s;
-    }
-    .btn-del-record:hover { color: #E03E3E; }
-
-    @media (max-width: 768px) {
-      .mobile-tabs { display: flex; }
-      .board-container { gap: 20px; scroll-snap-type: x mandatory; }
-      .column { flex: 0 0 85vw; scroll-snap-align: start; }
-      .card-actions { opacity: 1; }
-      .side-peek { width: 90%; }
-    }
-
-    /* 모달 등 */
+    /* 모달 & 사이드 피크 */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; }
     .modal-box { background: white; width: 92%; max-width: 500px; padding: 30px; border-radius: 8px; max-height: 90vh; overflow-y: auto; }
     .form-input, .form-textarea, .form-select { width: 100%; padding: 8px 0; border: none; border-bottom: 1px solid #E0E0E0; margin-bottom: 15px; font-size: 0.95rem; outline: none; font-family: inherit;}
@@ -147,33 +115,74 @@
     .color-picker { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
     .color-opt { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
     .color-opt.selected { border: 2px solid #333; transform: scale(1.1); }
+    .side-peek-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 998; }
+    .side-peek { position: fixed; top: 0; right: 0; width: 70%; height: 100%; background: white; box-shadow: -5px 0 30px rgba(0,0,0,0.1); z-index: 999; transform: translateX(100%); transition: transform 0.3s ease-out; display: flex; flex-direction: column; }
+    .side-peek.open { transform: translateX(0); }
+    .peek-header { padding: 20px 30px; border-bottom: 1px solid #F0F0F0; display: flex; justify-content: space-between; align-items: center; }
+    .peek-title { font-size: 1.6rem; font-weight: 700; display: flex; align-items: center; }
+    .peek-close { border: none; background: none; font-size: 1.5rem; cursor: pointer; color: #999; }
+    .peek-content { padding: 0 30px 40px 30px; overflow-y: auto; flex: 1; }
+    .peek-section { margin-top: 25px; }
+    .peek-label { font-size: 0.85rem; color: #999; margin-bottom: 8px; font-weight: 600; display: flex; align-items: center;}
+    .peek-strategy-box { background: #FAFAFA; padding: 15px; border-radius: 6px; border: 1px solid #F0F0F0; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; }
+    .trade-stats { display: flex; gap: 15px; margin-bottom: 15px; background: #F7F7F5; padding: 15px; border-radius: 8px; }
+    .stat-item { flex: 1; }
+    .stat-label { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
+    .stat-value { font-size: 1.1rem; font-weight: 700; color: #333; }
+    .val-red { color: #E03E3E; } .val-blue { color: #2EAADC; }
+    .trade-input-box { background: #FCFCFA; border: 1px solid #E9E9E7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    .trade-input-header { font-size: 0.8rem; color: #999; margin-bottom: 10px; font-weight: 600; }
+    .trade-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .trade-input { padding: 8px; border: 1px solid #DDD; border-radius: 4px; font-family: inherit; font-size: 0.9rem; background:white; }
+    .btn-add-trade { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;}
+    .trade-list { list-style: none; padding: 0; margin: 0; }
+    .trade-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #EEE; font-size: 0.9rem; }
+    .trade-info { display: flex; flex-direction: column; gap: 2px; }
+    .trade-meta { font-size: 0.75rem; color: #999; display: flex; gap: 6px; align-items: center;}
+    .trade-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+    .badge-BUY { background: #FFE2DD; color: #D44C47; } .badge-SELL { background: #D3E5EF; color: #183347; }
+    .btn-del-record { border: none; background: none; color: #CCC; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0 0 0 8px; transition: color 0.2s; } .btn-del-record:hover { color: #E03E3E; }
 
+    @media (max-width: 768px) {
+      .mobile-tabs { display: flex; }
+      .board-container { gap: 20px; scroll-snap-type: x mandatory; padding: 0 20px 20px 20px; }
+      .column { flex: 0 0 85vw; scroll-snap-align: start; }
+      .side-peek { width: 90%; }
+      .main-page-header { padding: 20px; }
+      .page-title { font-size: 2rem; }
+    }
   </style>
 </head>
 <body>
+
+<header class="main-page-header">
+  <div class="page-icon">🚀</div> <div id="mainPageTitle" class="page-title" contenteditable="true" spellcheck="false" onblur="saveMainTitle(this)">
+  📈 Stock Strategy !
+</div>
+</header>
 
 <div class="mobile-tabs">
   <button class="tab-btn active" onclick="showColumn('ALL', this)">전체 보기</button>
   <button class="tab-btn" onclick="showColumn('DOM', this)">🇰🇷 국장</button>
   <button class="tab-btn" onclick="showColumn('OVS', this)">🇺🇸 미장</button>
+  <button class="tab-btn" onclick="showColumn('CAL', this)">📅 캘린더</button>
 </div>
 
 <div class="board-container">
   <div id="col-dom" class="column">
-    <div class="column-header"><div class="header-badge badge-dom">국장 전략 <span class="count" th:text="${#lists.size(stocks.?[marketType.name() == 'DOMESTIC'])}">0</span></div></div>
+    <div class="column-header"><div class="header-badge badge-dom"><span id="head-dom" class="editable-title" contenteditable="true" onblur="saveTitle('dom', this)">국장 전략</span><span class="count" th:text="${#lists.size(stocks.?[marketType.name() == 'DOMESTIC'])}">0</span></div></div>
     <div class="card" th:each="stock : ${stocks}" th:if="${stock.marketType.name() == 'DOMESTIC'}" onclick="openSidePeek(this)" th:data-stock-id="${stock.id}" th:data-market="${stock.marketType}">
       <div class="hidden-data" style="display:none;">
-        <div class="d-name" th:text="${stock.stockName}"></div>
-        <div class="d-icon">🇰🇷</div>
-        <div class="d-buy" th:each="s : ${stock.buyStrategies}" th:text="${s}"></div>
-        <div class="d-sell" th:each="s : ${stock.sellStrategies}" th:text="${s}"></div>
+        <div class="d-name" th:text="${stock.stockName}"></div><div class="d-icon">🇰🇷</div>
+        <div class="d-buy" th:each="s : ${stock.buyStrategies}" th:text="${s}"></div><div class="d-sell" th:each="s : ${stock.sellStrategies}" th:text="${s}"></div>
         <div class="d-record" th:each="r : ${stock.records}" th:data-id="${r.id}" th:data-date="${r.tradingDate}" th:data-type="${r.type}" th:data-price="${r.price}" th:data-qty="${r.quantity}" th:data-memo="${r.memo}"></div>
       </div>
-      <div class="card-header">
-        <div class="stock-title"><span class="stock-icon">🇰🇷</span><span th:text="${stock.stockName}"></span></div>
+      <div class="card-header"><div class="stock-title"><span class="stock-icon">🇰🇷</span><span th:text="${stock.stockName}"></span></div>
         <div class="card-actions">
           <button class="action-btn" onclick="editStockDirect(event, this)">✏️</button>
-          <button class="action-btn btn-del" onclick="deleteStockDirect(event, [[${stock.id}]])">🗑️</button>
+          <button class="action-btn btn-del"
+                  th:data-id="${stock.id}"
+                  onclick="deleteStockDirect(event, this.getAttribute('data-id'))">🗑️</button>
         </div>
       </div>
       <div class="strategy-block buy-area" th:if="${not #lists.isEmpty(stock.buyStrategies)}"><span class="strategy-label">&lt;매수&gt;</span><div class="strategy-line" th:each="st : ${stock.buyStrategies}" th:text="${st}"></div></div>
@@ -184,20 +193,19 @@
   </div>
 
   <div id="col-ovs" class="column">
-    <div class="column-header"><div class="header-badge badge-ovs">미장 전략 <span class="count" th:text="${#lists.size(stocks.?[marketType.name() == 'OVERSEAS'])}">0</span></div></div>
+    <div class="column-header"><div class="header-badge badge-ovs"><span id="head-ovs" class="editable-title" contenteditable="true" onblur="saveTitle('ovs', this)">미장 전략</span><span class="count" th:text="${#lists.size(stocks.?[marketType.name() == 'OVERSEAS'])}">0</span></div></div>
     <div class="card" th:each="stock : ${stocks}" th:if="${stock.marketType.name() == 'OVERSEAS'}" onclick="openSidePeek(this)" th:data-stock-id="${stock.id}" th:data-market="${stock.marketType}">
       <div class="hidden-data" style="display:none;">
-        <div class="d-name" th:text="${stock.stockName}"></div>
-        <div class="d-icon">🇺🇸</div>
-        <div class="d-buy" th:each="s : ${stock.buyStrategies}" th:text="${s}"></div>
-        <div class="d-sell" th:each="s : ${stock.sellStrategies}" th:text="${s}"></div>
+        <div class="d-name" th:text="${stock.stockName}"></div><div class="d-icon">🇺🇸</div>
+        <div class="d-buy" th:each="s : ${stock.buyStrategies}" th:text="${s}"></div><div class="d-sell" th:each="s : ${stock.sellStrategies}" th:text="${s}"></div>
         <div class="d-record" th:each="r : ${stock.records}" th:data-id="${r.id}" th:data-date="${r.tradingDate}" th:data-type="${r.type}" th:data-price="${r.price}" th:data-qty="${r.quantity}" th:data-memo="${r.memo}"></div>
       </div>
-      <div class="card-header">
-        <div class="stock-title"><span class="stock-icon">🇺🇸</span><span th:text="${stock.stockName}"></span></div>
+      <div class="card-header"><div class="stock-title"><span class="stock-icon">🇺🇸</span><span th:text="${stock.stockName}"></span></div>
         <div class="card-actions">
           <button class="action-btn" onclick="editStockDirect(event, this)">✏️</button>
-          <button class="action-btn btn-del" onclick="deleteStockDirect(event, [[${stock.id}]])">🗑️</button>
+          <button class="action-btn btn-del"
+                  th:data-id="${stock.id}"
+                  onclick="deleteStockDirect(event, this.getAttribute('data-id'))">🗑️</button>
         </div>
       </div>
       <div class="strategy-block buy-area" th:if="${not #lists.isEmpty(stock.buyStrategies)}"><span class="strategy-label">&lt;매수&gt;</span><div class="strategy-line" th:each="st : ${stock.buyStrategies}" th:text="${st}"></div></div>
@@ -206,47 +214,38 @@
     </div>
     <div class="btn-new-page" onclick="openCreateModal('OVERSEAS')"><span>+</span> 새 페이지</div>
   </div>
+
+  <div id="col-cal" class="column">
+    <div class="column-header"><div class="header-badge badge-cal"><span id="head-cal" class="editable-title" contenteditable="true" onblur="saveTitle('cal', this)">투자 일지 📅</span></div></div>
+    <div class="card" style="cursor:default;">
+      <div class="cal-nav"><button class="cal-btn" onclick="changeMonth(-1)">◀</button><span id="calMonthLabel">2026. 01</span><button class="cal-btn" onclick="changeMonth(1)">▶</button></div>
+      <div class="calendar-grid"><div class="cal-header">일</div><div class="cal-header">월</div><div class="cal-header">화</div><div class="cal-header">수</div><div class="cal-header">목</div><div class="cal-header">금</div><div class="cal-header">토</div></div>
+      <div id="calendarDays" class="calendar-grid" style="margin-bottom:0;"></div>
+      <div id="calendarMemoArea" class="cal-memo-area"><div id="calMemoDate" class="cal-memo-date">2026-01-28</div><textarea id="calMemoContent" class="cal-memo-input" placeholder="오늘의 투자 생각..."></textarea><button class="btn-save-memo" onclick="saveCalendarMemo()">저장</button></div>
+    </div>
+  </div>
 </div>
 
 <div id="sidePeekOverlay" class="side-peek-overlay" onclick="closeSidePeek()"></div>
 <div id="sidePeek" class="side-peek">
-  <div class="peek-header">
-    <div class="peek-title" id="peekTitle"></div>
-    <button class="peek-close" onclick="closeSidePeek()">×</button>
-  </div>
+  <div class="peek-header"><div class="peek-title" id="peekTitle"></div><button class="peek-close" onclick="closeSidePeek()">×</button></div>
   <div class="peek-content">
-    <div class="peek-section">
-      <div class="peek-label">🔥 매수 전략</div>
-      <div id="peekBuy" class="peek-strategy-box"></div>
-    </div>
-    <div class="peek-section">
-      <div class="peek-label">💰 매도 전략</div>
-      <div id="peekSell" class="peek-strategy-box"></div>
-    </div>
-
+    <div class="peek-section"><div class="peek-label">🔥 매수 전략</div><div id="peekBuy" class="peek-strategy-box"></div></div>
+    <div class="peek-section"><div class="peek-label">💰 매도 전략</div><div id="peekSell" class="peek-strategy-box"></div></div>
     <div class="peek-section" style="border-top:1px solid #EEE; padding-top:20px;">
-      <div class="peek-label">📊 매매 기록 & 수익률 (자동 계산)</div>
-      <div class="trade-stats">
-        <div class="stat-item"><div class="stat-label">보유 수량</div><div class="stat-value" id="statQty">0주</div></div>
-        <div class="stat-item"><div class="stat-label">평균 단가</div><div class="stat-value" id="statAvg">0</div></div>
-        <div class="stat-item"><div class="stat-label">실현 손익</div><div class="stat-value" id="statProfit">0</div></div>
-      </div>
-
+      <div class="peek-label">📊 매매 기록 & 수익률</div>
+      <div class="trade-stats"><div class="stat-item"><div class="stat-label">보유 수량</div><div class="stat-value" id="statQty">0주</div></div><div class="stat-item"><div class="stat-label">평균 단가</div><div class="stat-value" id="statAvg">0</div></div><div class="stat-item"><div class="stat-label">실현 손익</div><div class="stat-value" id="statProfit">0</div></div></div>
       <div class="trade-input-box">
         <div class="trade-input-header">✏️ 기록 추가</div>
         <div class="trade-input-row">
           <input type="date" id="tradeDate" class="trade-input" style="width:110px;">
-          <select id="tradeType" class="trade-input">
-            <option value="BUY">매수</option>
-            <option value="SELL">매도</option>
-          </select>
+          <select id="tradeType" class="trade-input"><option value="BUY">매수</option><option value="SELL">매도</option></select>
           <input type="number" id="tradePrice" class="trade-input" placeholder="가격" style="flex:1;">
           <input type="number" id="tradeQty" class="trade-input" placeholder="수량" style="width:60px;">
           <button class="btn-add-trade" onclick="addTradeRecord()">등록</button>
         </div>
-        <input type="text" id="tradeMemo" class="trade-input" placeholder="메모 (ex. 현금 확보)" style="width:100%; box-sizing:border-box;">
+        <input type="text" id="tradeMemo" class="trade-input" placeholder="메모" style="width:100%; box-sizing:border-box;">
       </div>
-
       <ul id="tradeList" class="trade-list"></ul>
     </div>
   </div>
@@ -262,238 +261,117 @@
     <textarea id="inputBuy" class="form-textarea" placeholder="매수 전략"></textarea>
     <textarea id="inputSell" class="form-textarea" placeholder="매도 전략"></textarea>
     <div style="margin-top:10px;"><input type="text" id="inputTagText" class="form-input" placeholder="태그" style="width:70%; display:inline-block;"><button onclick="addTagFromInput()" style="width:25%; padding:8px; border:1px solid #ddd; background:white;">추가</button></div>
-    <div class="color-picker">
-      <div class="color-opt selected" style="background:#E3E2E0" onclick="selColor(this, 'gray')"></div>
-      <div class="color-opt" style="background:#DBEDDB" onclick="selColor(this, 'green')"></div>
-      <div class="color-opt" style="background:#D3E5EF" onclick="selColor(this, 'blue')"></div>
-      <div class="color-opt" style="background:#FFE2DD" onclick="selColor(this, 'red')"></div>
-    </div>
+    <div class="color-picker"><div class="color-opt selected" style="background:#E3E2E0" onclick="selColor(this, 'gray')"></div><div class="color-opt" style="background:#DBEDDB" onclick="selColor(this, 'green')"></div><div class="color-opt" style="background:#D3E5EF" onclick="selColor(this, 'blue')"></div><div class="color-opt" style="background:#FFE2DD" onclick="selColor(this, 'red')"></div></div>
     <div id="curTags" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;"></div>
-    <div class="rec-tags-area">
-      <div style="font-size:0.8rem; color:#999; margin-bottom:8px;">🏷️ 기존 태그</div>
-      <button th:each="fullTag : ${allTags}" th:with="parts=${#strings.arraySplit(fullTag, '|')}" class="rec-tag-btn" th:onclick="addTagFromRec([[${parts[0]}]], [[${parts[1]}]])"><span th:text="${parts[0]}"></span></button>
-    </div>
+    <div class="rec-tags-area"><div style="font-size:0.8rem; color:#999; margin-bottom:8px;">🏷️ 기존 태그</div><button th:each="fullTag : ${allTags}" th:with="parts=${#strings.arraySplit(fullTag, '|')}" class="rec-tag-btn" th:onclick="addTagFromRec([[${parts[0]}]], [[${parts[1]}]])"><span th:text="${parts[0]}"></span></button></div>
     <button class="btn-submit" onclick="saveStock()">완료</button>
   </div>
 </div>
 
 <script>
-  let curTags=[], selCol='gray';
-  let currentStockId = null;
-  let currentMarketType = 'DOMESTIC';
+  let curTags=[], selCol='gray', currentStockId=null, currentMarketType='DOMESTIC';
+  let calYear = new Date().getFullYear(), calMonth = new Date().getMonth(), selectedDateStr = "";
 
-  // ⭐ 3. 페이지 로드 시 "자동으로 창 열기" (상태 유지)
   window.onload = function() {
     const lastOpenId = localStorage.getItem('lastOpenStockId');
     if (lastOpenId) {
       const card = document.querySelector(`.card[data-stock-id="${lastOpenId}"]`);
-      if (card) {
-        openSidePeek(card); // 자동으로 클릭해줌!
-      }
-      localStorage.removeItem('lastOpenStockId'); // 할 일 다 했으니 삭제
+      if (card) openSidePeek(card);
+      localStorage.removeItem('lastOpenStockId');
+    }
+    renderCalendar();
+    const todayStr = new Date().toISOString().split('T')[0];
+    selectDate(todayStr);
+
+    loadTitle('dom', '국장 전략');
+    loadTitle('ovs', '미장 전략');
+    loadTitle('cal', '투자 일지 📅');
+
+    // ⭐ [신규] 대왕 제목 불러오기
+    const savedMain = localStorage.getItem('main_page_title');
+    if(savedMain) document.getElementById('mainPageTitle').innerText = savedMain;
+  }
+
+  function saveTitle(key, el) { localStorage.setItem('col_title_' + key, el.innerText); }
+  function loadTitle(key, defaultText) {
+    const saved = localStorage.getItem('col_title_' + key);
+    const el = document.getElementById('head-' + key);
+    if (saved) el.innerText = saved; else el.innerText = defaultText;
+  }
+
+  // ⭐ [신규] 대왕 제목 저장
+  function saveMainTitle(el) {
+    localStorage.setItem('main_page_title', el.innerText);
+  }
+
+  // --- 캘린더, 주식 로직은 기존과 동일 ---
+  function renderCalendar() {
+    const container = document.getElementById('calendarDays'); container.innerHTML = '';
+    document.getElementById('calMonthLabel').innerText = `${calYear}. ${String(calMonth+1).padStart(2,'0')}`;
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const lastDate = new Date(calYear, calMonth+1, 0).getDate();
+    const today = new Date();
+    for(let i=0; i<firstDay; i++) { container.innerHTML += `<div class="cal-day empty"></div>`; }
+    for(let d=1; d<=lastDate; d++) {
+      const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = (today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d);
+      const dayEl = document.createElement('div');
+      dayEl.className = `cal-day ${isToday ? 'today' : ''}`; dayEl.id = `day-${dateStr}`; dayEl.innerText = d; dayEl.onclick = () => selectDate(dateStr);
+      container.appendChild(dayEl);
     }
   }
-
-  function formatCurrency(val, type) {
-    if(type === 'DOMESTIC') return '₩' + Math.floor(val).toLocaleString();
-    else return '$' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 3});
+  function changeMonth(delta) { calMonth += delta; if(calMonth < 0) { calYear--; calMonth = 11; } else if(calMonth > 11) { calYear++; calMonth = 0; } renderCalendar(); }
+  function selectDate(dateStr) {
+    selectedDateStr = dateStr;
+    document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+    const target = document.getElementById(`day-${dateStr}`); if(target) target.classList.add('selected');
+    document.getElementById('calendarMemoArea').style.display = 'block';
+    document.getElementById('calMemoDate').innerText = dateStr;
+    document.getElementById('calMemoContent').value = "로딩 중...";
+    fetch(`/api/memos/${dateStr}`).then(r => r.text()).then(text => { document.getElementById('calMemoContent').value = text; });
   }
+  function saveCalendarMemo() { const content = document.getElementById('calMemoContent').value; fetch('/api/memos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDateStr, content: content }) }).then(r => { if(r.ok) alert('저장되었습니다!'); else alert('저장 실패'); }); }
 
+  function formatCurrency(val, type) { if(type === 'DOMESTIC') return '₩' + Math.floor(val).toLocaleString(); else return '$' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 3}); }
   function openSidePeek(cardEl) {
-    const hiddenBox = cardEl.querySelector('.hidden-data');
-    const name = hiddenBox.querySelector('.d-name').innerText;
-    const icon = hiddenBox.querySelector('.d-icon').innerText;
-
-    currentStockId = cardEl.getAttribute('data-stock-id');
-    currentMarketType = cardEl.getAttribute('data-market');
-
+    const hiddenBox = cardEl.querySelector('.hidden-data'); const name = hiddenBox.querySelector('.d-name').innerText; const icon = hiddenBox.querySelector('.d-icon').innerText;
+    currentStockId = cardEl.getAttribute('data-stock-id'); currentMarketType = cardEl.getAttribute('data-market');
     let buyText = ""; hiddenBox.querySelectorAll('.d-buy').forEach(d => buyText += "• " + d.innerText + "\n");
     let sellText = ""; hiddenBox.querySelectorAll('.d-sell').forEach(d => sellText += "• " + d.innerText + "\n");
-
     document.getElementById('peekTitle').innerHTML = `<span style="margin-right:10px;">${icon}</span> ${name}`;
-    document.getElementById('peekBuy').innerText = buyText || "전략 없음";
-    document.getElementById('peekSell').innerText = sellText || "전략 없음";
+    document.getElementById('peekBuy').innerText = buyText || "전략 없음"; document.getElementById('peekSell').innerText = sellText || "전략 없음";
     document.getElementById('tradeDate').valueAsDate = new Date();
-
-    const recordDivs = hiddenBox.querySelectorAll('.d-record');
-    const records = [];
-    recordDivs.forEach(div => {
-      records.push({
-        id: div.getAttribute('data-id'), // ⭐ 삭제를 위해 ID도 읽음
-        date: div.getAttribute('data-date'),
-        type: div.getAttribute('data-type'),
-        price: parseFloat(div.getAttribute('data-price')),
-        qty: parseInt(div.getAttribute('data-qty')),
-        memo: div.getAttribute('data-memo')
-      });
-    });
-    renderTradeLog(records);
-
-    document.getElementById('sidePeekOverlay').style.display = 'block';
-    setTimeout(() => { document.getElementById('sidePeek').classList.add('open'); }, 10);
+    const recordDivs = hiddenBox.querySelectorAll('.d-record'); const records = [];
+    recordDivs.forEach(div => { records.push({ id: div.getAttribute('data-id'), date: div.getAttribute('data-date'), type: div.getAttribute('data-type'), price: parseFloat(div.getAttribute('data-price')), qty: parseInt(div.getAttribute('data-qty')), memo: div.getAttribute('data-memo') }); });
+    renderTradeLog(records); document.getElementById('sidePeekOverlay').style.display = 'block'; setTimeout(() => { document.getElementById('sidePeek').classList.add('open'); }, 10);
   }
-
-  function closeSidePeek() {
-    document.getElementById('sidePeek').classList.remove('open');
-    setTimeout(() => { document.getElementById('sidePeekOverlay').style.display = 'none'; }, 300);
-  }
-
+  function closeSidePeek() { document.getElementById('sidePeek').classList.remove('open'); setTimeout(() => { document.getElementById('sidePeekOverlay').style.display = 'none'; }, 300); }
   function renderTradeLog(records) {
-    const listEl = document.getElementById('tradeList');
-    listEl.innerHTML = '';
-
-    let totalQty = 0; let totalCost = 0; let realizedProfit = 0;
-
-    if(records.length === 0) {
-      listEl.innerHTML = '<li style="padding:15px; color:#999; text-align:center;">아직 매매 기록이 없습니다.</li>';
-      updateStats(0, 0, 0); return;
-    }
-
-    records.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    records.forEach(r => {
-      if(r.type === 'BUY') { totalCost += r.price * r.qty; totalQty += r.qty; }
-      else if(r.type === 'SELL') {
-        const avgPrice = totalQty > 0 ? totalCost / totalQty : 0;
-        realizedProfit += (r.price - avgPrice) * r.qty;
-        const sellRatio = r.qty / totalQty;
-        totalCost -= totalCost * sellRatio;
-        totalQty -= r.qty;
-      }
-
-      const dateStr = r.date.substring(0, 10);
-      const badgeClass = r.type === 'BUY' ? 'badge-BUY' : 'badge-SELL';
-      const typeText = r.type === 'BUY' ? '매수' : '매도';
-      const formattedPrice = formatCurrency(r.price, currentMarketType);
-
-      const li = document.createElement('li');
-      li.className = 'trade-item';
-      li.innerHTML = `
-                    <div class="trade-info">
-                        <div style="font-weight:600;">
-                            ${formattedPrice} <span style="color:#AAA; font-weight:400;">x</span> ${r.qty}주
-                        </div>
-                        <div style="font-size:0.8rem; color:#555;">${r.memo || '-'}</div>
-                    </div>
-                    <div class="trade-info" style="align-items:flex-end;">
-                        <div>
-                            <span class="trade-badge ${badgeClass}">${typeText}</span>
-                            <button class="btn-del-record" onclick="deleteTradeRecord(${r.id})">×</button>
-                        </div>
-                        <span class="trade-meta">${dateStr}</span>
-                    </div>
-                `;
+    const listEl = document.getElementById('tradeList'); listEl.innerHTML = ''; let totalQty=0, totalCost=0, realizedProfit=0;
+    if(records.length===0){ listEl.innerHTML='<li style="padding:15px; color:#999; text-align:center;">아직 매매 기록이 없습니다.</li>'; updateStats(0,0,0); return;}
+    records.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    records.forEach(r=>{
+      if(r.type==='BUY'){ totalCost+=r.price*r.qty; totalQty+=r.qty; } else if(r.type==='SELL'){ const avgPrice=totalQty>0?totalCost/totalQty:0; realizedProfit+=(r.price-avgPrice)*r.qty; const sellRatio=r.qty/totalQty; totalCost-=totalCost*sellRatio; totalQty-=r.qty; }
+      const dateStr = r.date.substring(0, 10); const badgeClass = r.type === 'BUY' ? 'badge-BUY' : 'badge-SELL'; const typeText = r.type === 'BUY' ? '매수' : '매도'; const formattedPrice = formatCurrency(r.price, currentMarketType);
+      const li = document.createElement('li'); li.className = 'trade-item'; li.innerHTML = `<div class="trade-info"><div style="font-weight:600;">${formattedPrice} <span style="color:#AAA; font-weight:400;">x</span> ${r.qty}주</div><div style="font-size:0.8rem; color:#555;">${r.memo || '-'}</div></div><div class="trade-info" style="align-items:flex-end;"><div><span class="trade-badge ${badgeClass}">${typeText}</span><button class="btn-del-record" onclick="deleteTradeRecord(${r.id})">×</button></div><span class="trade-meta">${dateStr}</span></div>`;
       listEl.prepend(li);
     });
-
-    const avgPrice = totalQty > 0 ? totalCost / totalQty : 0;
-    updateStats(totalQty, avgPrice, realizedProfit);
+    const avgPrice = totalQty > 0 ? totalCost / totalQty : 0; updateStats(totalQty, avgPrice, realizedProfit);
   }
-
-  function updateStats(qty, avg, profit) {
-    document.getElementById('statQty').innerText = qty + "주";
-    document.getElementById('statAvg').innerText = formatCurrency(avg, currentMarketType);
-    const profitStr = formatCurrency(Math.abs(profit), currentMarketType);
-    const profitEl = document.getElementById('statProfit');
-    profitEl.innerText = (profit > 0 ? "+" : (profit < 0 ? "-" : "")) + profitStr;
-    profitEl.className = "stat-value " + (profit >= 0 ? "val-red" : "val-blue");
-  }
-
-  function addTradeRecord() {
-    if(!currentStockId) return;
-    const date = document.getElementById('tradeDate').value;
-    const type = document.getElementById('tradeType').value;
-    const price = document.getElementById('tradePrice').value;
-    const qty = document.getElementById('tradeQty').value;
-    const memo = document.getElementById('tradeMemo').value;
-
-    if(!date || !price || !qty) { alert('날짜, 가격, 수량을 입력해주세요.'); return; }
-
-    const data = { date: date, type: type, price: parseFloat(price), quantity: parseInt(qty), memo: memo };
-
-    fetch(`/api/stocks/${currentStockId}/records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(r => {
-      if(r.ok) {
-        // ⭐ 저장 성공 시, 현재 열려있는 종목 ID를 저장해둠 (요청사항 3)
-        localStorage.setItem('lastOpenStockId', currentStockId);
-        location.reload();
-      } else { alert('저장 실패'); }
-    });
-  }
-
-  // ⭐ 삭제 함수
-  function deleteTradeRecord(recordId) {
-    if(!confirm('이 기록을 삭제하시겠습니까?')) return;
-    fetch(`/api/stocks/records/${recordId}`, { method: 'DELETE' }).then(r => {
-      if(r.ok) {
-        localStorage.setItem('lastOpenStockId', currentStockId); // 삭제 후에도 창 유지
-        location.reload();
-      }
-    });
-  }
-
-  // --- 기타 기존 함수들 (변화 없음) ---
-  function showColumn(type, btn) {
-    if(btn) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
-    const dom = document.getElementById('col-dom'), ovs = document.getElementById('col-ovs');
-    if(window.innerWidth <= 768) {
-      if(type==='ALL'){ dom.classList.remove('hidden','active'); ovs.classList.remove('hidden','active'); }
-      else if(type==='DOM'){ dom.classList.remove('hidden'); dom.classList.add('active'); ovs.classList.add('hidden'); ovs.classList.remove('active'); }
-      else { dom.classList.add('hidden'); dom.classList.remove('active'); ovs.classList.remove('hidden'); ovs.classList.add('active'); }
-    }
-  }
-  function openCreateModal(type) {
-    document.getElementById('createModal').style.display = 'flex';
-    document.getElementById('inputId').value = '';
-    document.getElementById('inputMarket').value = type;
-    document.getElementById('inputName').value = '';
-    document.getElementById('inputCode').value = '';
-    document.getElementById('inputBuy').value = '';
-    document.getElementById('inputSell').value = '';
-    curTags = []; renderTags();
-  }
-  function editStockDirect(event, btn) {
-    event.stopPropagation();
-    const card = btn.closest('.card');
-    const hiddenBox = card.querySelector('.hidden-data');
-    const name = hiddenBox.querySelector('.d-name').innerText;
-    const id = card.getAttribute('data-stock-id');
-    let buyText = ""; hiddenBox.querySelectorAll('.d-buy').forEach(d => buyText += d.innerText + "\n");
-    let sellText = ""; hiddenBox.querySelectorAll('.d-sell').forEach(d => sellText += d.innerText + "\n");
-    curTags = [];
-    card.querySelectorAll('.tags .tag').forEach(tag => {
-      const text = tag.innerText;
-      let color = 'gray';
-      tag.classList.forEach(cls => { if(cls.startsWith('tag-')) color = cls.replace('tag-',''); });
-      curTags.push(text + '|' + color);
-    });
-    document.getElementById('createModal').style.display = 'flex';
-    document.getElementById('modalTitle').innerText = "페이지 수정";
-    document.getElementById('inputId').value = id;
-    document.getElementById('inputName').value = name;
-    document.getElementById('inputBuy').value = buyText;
-    document.getElementById('inputSell').value = sellText;
-    renderTags();
-  }
+  function updateStats(qty, avg, profit) { document.getElementById('statQty').innerText = qty + "주"; document.getElementById('statAvg').innerText = formatCurrency(avg, currentMarketType); const profitStr = formatCurrency(Math.abs(profit), currentMarketType); const profitEl = document.getElementById('statProfit'); profitEl.innerText = (profit > 0 ? "+" : (profit < 0 ? "-" : "")) + profitStr; profitEl.className = "stat-value " + (profit >= 0 ? "val-red" : "val-blue"); }
+  function addTradeRecord() { if(!currentStockId) return; const date = document.getElementById('tradeDate').value; const type = document.getElementById('tradeType').value; const price = document.getElementById('tradePrice').value; const qty = document.getElementById('tradeQty').value; const memo = document.getElementById('tradeMemo').value; if(!date || !price || !qty) { alert('날짜, 가격, 수량을 입력해주세요.'); return; } const data = { date: date, type: type, price: parseFloat(price), quantity: parseInt(qty), memo: memo }; fetch(`/api/stocks/${currentStockId}/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => { if(r.ok) { localStorage.setItem('lastOpenStockId', currentStockId); location.reload(); } else { alert('저장 실패'); } }); }
+  function deleteTradeRecord(recordId) { if(!confirm('이 기록을 삭제하시겠습니까?')) return; fetch(`/api/stocks/records/${recordId}`, { method: 'DELETE' }).then(r => { if(r.ok) { localStorage.setItem('lastOpenStockId', currentStockId); location.reload(); } }); }
+  function showColumn(type, btn) { if(btn) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); } const dom = document.getElementById('col-dom'), ovs = document.getElementById('col-ovs'), cal = document.getElementById('col-cal'); if(window.innerWidth <= 768) { if(type==='ALL'){ dom.classList.remove('hidden','active'); ovs.classList.remove('hidden','active'); cal.classList.remove('hidden','active'); } else if(type==='DOM'){ dom.classList.remove('hidden'); dom.classList.add('active'); ovs.classList.add('hidden'); ovs.classList.remove('active'); cal.classList.add('hidden'); cal.classList.remove('active'); } else if(type==='OVS'){ dom.classList.add('hidden'); dom.classList.remove('active'); ovs.classList.remove('hidden'); ovs.classList.add('active'); cal.classList.add('hidden'); cal.classList.remove('active'); } else { dom.classList.add('hidden'); dom.classList.remove('active'); ovs.classList.add('hidden'); ovs.classList.remove('active'); cal.classList.remove('hidden'); cal.classList.add('active'); } } }
+  function openCreateModal(type) { document.getElementById('createModal').style.display = 'flex'; document.getElementById('inputId').value = ''; document.getElementById('inputMarket').value = type; document.getElementById('inputName').value = ''; document.getElementById('inputCode').value = ''; document.getElementById('inputBuy').value = ''; document.getElementById('inputSell').value = ''; curTags = []; renderTags(); }
+  function editStockDirect(event, btn) { event.stopPropagation(); const card = btn.closest('.card'); const hiddenBox = card.querySelector('.hidden-data'); const name = hiddenBox.querySelector('.d-name').innerText; const id = card.getAttribute('data-stock-id'); let buyText = ""; hiddenBox.querySelectorAll('.d-buy').forEach(d => buyText += d.innerText + "\n"); let sellText = ""; hiddenBox.querySelectorAll('.d-sell').forEach(d => sellText += d.innerText + "\n"); curTags = []; card.querySelectorAll('.tags .tag').forEach(tag => { const text = tag.innerText; let color = 'gray'; tag.classList.forEach(cls => { if(cls.startsWith('tag-')) color = cls.replace('tag-',''); }); curTags.push(text + '|' + color); }); document.getElementById('createModal').style.display = 'flex'; document.getElementById('modalTitle').innerText = "페이지 수정"; document.getElementById('inputId').value = id; document.getElementById('inputName').value = name; document.getElementById('inputBuy').value = buyText; document.getElementById('inputSell').value = sellText; renderTags(); }
   function deleteStockDirect(event, id) {
     event.stopPropagation();
-    if(confirm('정말 삭제하시겠습니까?')) fetch('/api/stocks/' + id, { method: 'DELETE' }).then(r => location.reload());
+
+    if(confirm('정말 삭제하시겠습니까?')) {
+      fetch('/api/stocks/' + id, { method: 'DELETE' }).then(r => location.reload());
+    }
   }
-  function saveStock() {
-    const data = {
-      id: document.getElementById('inputId').value || null,
-      stockName: document.getElementById('inputName').value,
-      code: document.getElementById('inputCode').value,
-      marketType: document.getElementById('inputMarket').value,
-      buyStrategies: document.getElementById('inputBuy').value.split('\n').filter(s=>s.trim()),
-      sellStrategies: document.getElementById('inputSell').value.split('\n').filter(s=>s.trim()),
-      tags: curTags
-    };
-    fetch('/api/stocks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).then(r=>{ if(r.ok) location.reload(); });
-  }
+  function saveStock() { const data = { id: document.getElementById('inputId').value || null, stockName: document.getElementById('inputName').value, code: document.getElementById('inputCode').value, marketType: document.getElementById('inputMarket').value, buyStrategies: document.getElementById('inputBuy').value.split('\n').filter(s=>s.trim()), sellStrategies: document.getElementById('inputSell').value.split('\n').filter(s=>s.trim()), tags: curTags }; fetch('/api/stocks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).then(r=>{ if(r.ok) location.reload(); }); }
   function closeModal(e, id) { if(e.target === document.getElementById(id)) document.getElementById(id).style.display='none'; }
   function selColor(el, c) { document.querySelectorAll('.color-opt').forEach(o=>o.classList.remove('selected')); el.classList.add('selected'); selCol = c; }
   function addTagFromInput() { let v = document.getElementById('inputTagText').value; if(v) { curTags.push(v+'|'+selCol); renderTags(); document.getElementById('inputTagText').value=''; } }
