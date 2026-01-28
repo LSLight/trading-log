@@ -42,4 +42,13 @@ public class Stock {
         this.buyStrategies = buyStrategies;
         this.sellStrategies = sellStrategies;
     }
+    // 1:N
+    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TradingRecord> records = new ArrayList<>();
+
+    // 편의 메서드 (기록 추가 시 종목과 서로 연결)
+    public void addRecord(TradingRecord record) {
+        this.records.add(record);
+        record.setStock(this);
+    }
 }
