@@ -54,4 +54,32 @@ public class StockService {
             }
         }
     }
+
+    // 저장로직 추가
+    // 1. 매매 기록 저장하기
+    public void addTradeRecord(Long stockId, com.logtrading.trading.dto.TradingRecordDto dto) {
+        // 1. 종목 찾기
+        Stock stock = stockRepository.findById(stockId)
+                .orElseThrow(() -> new IllegalArgumentException("종목이 없습니다."));
+
+        // 2. 날짜 변환 (String "2026-01-28" -> LocalDateTime)
+        // 시간은 현재 시간으로 대충 맞춤 (나중에 정교하게 수정 가능)
+        java.time.LocalDateTime date = java.time.LocalDate.parse(dto.getDate()).atStartOfDay();
+
+        // 3. 기록 엔티티 생성
+        com.logtrading.trading.domain.TradingRecord record = new com.logtrading.trading.domain.TradingRecord(
+                date, dto.getType(), dto.getPrice(), dto.getQuantity(), dto.getMemo()
+        );
+
+        // 4. 종목과 연결 (Stock 엔티티에 만들어둔 편의 메서드 사용)
+        stock.addRecord(record);
+
+        // 5. 저장 (Stock을 저장하면 연결된 Record도 같이 저장됨 - Cascade 옵션 덕분)
+        stockRepository.save(stock);
+    }
+
+    // 2. 특정 기록 삭제하기
+    public void deleteTradeRecord(Long recordId) {
+        // 이건 나중에 Repository 하나 더 주입받아서 처리해야 함 (일단 비워둬도 됨 or 패스)
+    }
 }

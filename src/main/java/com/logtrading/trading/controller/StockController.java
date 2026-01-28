@@ -43,4 +43,11 @@ public class StockController {
         stockService.renameTag(oldName, newName);
         return "ok";
     }
+
+    // 매매 기록 저장 API
+    @PostMapping("/{stockId}/records")
+    public String addRecord(@PathVariable Long stockId, @RequestBody com.logtrading.trading.dto.TradingRecordDto dto) {
+        stockService.addTradeRecord(stockId, dto);
+        return "ok";
+    }
 }
