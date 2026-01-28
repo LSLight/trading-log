@@ -68,7 +68,7 @@ public class DataInit {
         // ==========================================
         Stock nvda = new Stock(
                 "엔비디아", "NVDA", MarketType.OVERSEAS,
-                List.of("RSI(2)|blue", "60일선|brown", "볼린저밴드|orange"),
+                List.of("RSI(2)|blue", "20일선|green","RSI|purple"),
                 List.of("RSI(2) 10이하 팍 꺾일 때 매수", "20일선 빨간양봉"),
                 List.of("RIS(2) 90이상", "RSI 70이상", "전고점 터치 시")
         );
@@ -81,17 +81,17 @@ public class DataInit {
         Stock samsung = new Stock(
                 "삼성전자", "005930", MarketType.DOMESTIC,
                 List.of("국장|gray", "배당|yellow"),
-                List.of("6만전자 깨지면 줍기"),
-                List.of("8만전자 오면 탈출")
+                List.of("조정올때 빨리 탑승"),
+                List.of("일단 가지고있기")
         );
 
         // ➕ 국장 기록 추가
         samsung.addRecord(new TradingRecord(
-                LocalDateTime.of(2025, 12, 20, 10, 0),
+                LocalDateTime.of(2026, 1, 20, 10, 0),
                 TradeType.BUY,
-                58000.0, // 원화
+                153400.0, // 원화
                 100,
-                "바닥인 줄 알고 들어감.."
+                "올라가자 삼성전자 ! 주가리포트 25만"
         ));
 
         stockService.saveStock(samsung);
