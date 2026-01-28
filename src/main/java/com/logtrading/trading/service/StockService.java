@@ -5,6 +5,7 @@ import com.logtrading.trading.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.logtrading.trading.repository.TradingRecordRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,15 +16,20 @@ import java.util.List;
 public class StockService {
 
     private final StockRepository stockRepository;
+    private final TradingRecordRepository tradingRecordRepository;
 
-    public void saveStock(Stock stock) { stockRepository.save(stock); }
+    public void saveStock(Stock stock) {
+        stockRepository.save(stock); }
 
     @Transactional(readOnly = true)
-    public List<Stock> getAllStocks() { return stockRepository.findAll(); }
+    public List<Stock> getAllStocks() {
+        return stockRepository.findAll(); }
 
-    public void deleteStock(Long id) { stockRepository.deleteById(id); }
+    public void deleteStock(Long id) {
+        stockRepository.deleteById(id); }
 
-    public void deleteAll() { stockRepository.deleteAll(); }
+    public void deleteAll() {
+        stockRepository.deleteAll(); }
 
 
     // ⭐ 태그 이름 일괄 변경 (예: 볼밴 -> 볼린저밴드)
@@ -78,8 +84,8 @@ public class StockService {
         stockRepository.save(stock);
     }
 
-    // 2. 특정 기록 삭제하기
+    // ⭐ 매매 기록 삭제 기능
     public void deleteTradeRecord(Long recordId) {
-        // 이건 나중에 Repository 하나 더 주입받아서 처리해야 함 (일단 비워둬도 됨 or 패스)
+        tradingRecordRepository.deleteById(recordId);
     }
 }

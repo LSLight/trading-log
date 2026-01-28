@@ -33,12 +33,12 @@ public class DataInit {
 
         // 국장 예시
         Stock samsung = new Stock(
-                "한미반도체", "", MarketType.DOMESTIC,
-                List.of("20일선|green"),
+                "SK하이닉스", "", MarketType.DOMESTIC,
+                List.of(" 주가|green","RSI|purple"),
                 //매수
-                List.of("20일선 닿고 아래꼬리달때"),
+                List.of("80만원 초로 내려올 때 진입","RSI 내려가는거 보고 추매"),
                 //매도
-                List.of("전 고점 부근에서 매도","20일선 이탈시 비중 줄이기")
+                List.of("일단 가지고있기")
         );
         stockService.saveStock(samsung);
     }

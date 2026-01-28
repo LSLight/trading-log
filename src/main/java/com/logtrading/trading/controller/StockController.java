@@ -50,4 +50,11 @@ public class StockController {
         stockService.addTradeRecord(stockId, dto);
         return "ok";
     }
+
+    // ⭐ 매매 기록 삭제 API
+    @DeleteMapping("/records/{recordId}")
+    public String deleteRecord(@PathVariable Long recordId) {
+        stockService.deleteTradeRecord(recordId);
+        return "ok";
+    }
 }

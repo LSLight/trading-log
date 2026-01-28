@@ -43,7 +43,8 @@ public class Stock {
         this.sellStrategies = sellStrategies;
     }
     // 1:N
-    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
+    // 기존 FetchType.LAZY를 -> EAGER로 변경 (즉시 로딩)
+    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<TradingRecord> records = new ArrayList<>();
 
     // 편의 메서드 (기록 추가 시 종목과 서로 연결)
